@@ -8,25 +8,33 @@ from fpdf import FPDF
 from PIL import Image
 import io
 
-# Función para obtener el directorio de recursos
+# Función CORREGIDA para obtener rutas en modo .exe y modo desarrollo
 def resource_path(relative_path):
-    """Obtiene la ruta absoluta a un recurso"""
-    return os.path.join(os.path.abspath("."), relative_path)
+    """Obtiene la ruta absoluta a un recurso, funcionando tanto en desarrollo como en PyInstaller"""
+    try:
+        # PyInstaller crea una carpeta temporal _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        # En modo normal (python app.py) usa la carpeta actual
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
-# Función para obtener la ruta de la base de datos
-def get_database_path():
-    """Obtiene la ruta de la base de datos"""
-    return resource_path('informes.db')
+# Configuración de rutas usando la función corregida
+TEMPLATE_DIR = resource_path('templates')
+STATIC_DIR = resource_path('static')
+DB_PATH = resource_path('informes.db')
+UPLOAD_DIR = resource_path('static/uploads')
+REPORT_DIR = resource_path('reports')
 
-app = Flask(__name__, template_folder=resource_path('templates'), static_folder=resource_path('static'))
+# Crear la app de Flask con las rutas correctas
+app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 app.config['SECRET_KEY'] = 'tu_clave_secreta_aqui'
-# Modificar las rutas para usar resource_path
-app.config['UPLOAD_FOLDER'] = resource_path('static/uploads')
-app.config['REPORT_FOLDER'] = resource_path('reports')
-app.config['DATABASE'] = get_database_path()
+app.config['UPLOAD_FOLDER'] = UPLOAD_DIR
+app.config['REPORT_FOLDER'] = REPORT_DIR
+app.config['DATABASE'] = DB_PATH
 
-# Crear directorios si no existen
-for folder in [app.config['UPLOAD_FOLDER'], app.config['REPORT_FOLDER']]:
+# Crear directorios necesarios si no existen
+for folder in [UPLOAD_DIR, REPORT_DIR]:
     if not os.path.exists(folder):
         os.makedirs(folder)
 
@@ -36,12 +44,12 @@ def init_db():
     try:
         conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
-        
+
         # Crear tabla de máquinas
         c.execute('''CREATE TABLE IF NOT EXISTS maquinas
                      (id INTEGER PRIMARY KEY AUTOINCREMENT,
                       nombre TEXT UNIQUE NOT NULL)''')
-        
+
         # Crear tabla de informes
         c.execute('''CREATE TABLE IF NOT EXISTS informes
                      (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,7 +60,7 @@ def init_db():
                       imagen TEXT,
                       creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                       FOREIGN KEY (nombre_maquina) REFERENCES maquinas (nombre))''')
-        
+
         conn.commit()
         conn.close()
         print("Base de datos inicializada correctamente")
@@ -131,9 +139,9 @@ def delete_maquina(nombre):
 def get_informes_por_maquina(nombre_maquina):
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
-    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, creado_en 
-                 FROM informes 
-                 WHERE nombre_maquina = ? 
+    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, creado_en
+                 FROM informes
+                 WHERE nombre_maquina = ?
                  ORDER BY fecha DESC, hora DESC""", (nombre_maquina,))
     informes = []
     for row in c.fetchall():
@@ -153,8 +161,8 @@ def get_informes_por_maquina(nombre_maquina):
 def get_all_informes():
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
-    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, creado_en 
-                 FROM informes 
+    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, creado_en
+                 FROM informes
                  ORDER BY nombre_maquina, fecha, hora""")
     informes = []
     for row in c.fetchall():
@@ -174,8 +182,8 @@ def get_all_informes():
 def get_informes_por_fechas(fecha_inicio, fecha_fin):
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
-    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, creado_en 
-                 FROM informes 
+    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, creado_en
+                 FROM informes
                  WHERE fecha BETWEEN ? AND ?
                  ORDER BY nombre_maquina, fecha, hora""", (fecha_inicio, fecha_fin))
     informes = []
@@ -196,8 +204,8 @@ def get_informes_por_fechas(fecha_inicio, fecha_fin):
 def get_informe_by_id(id):
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
-    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, creado_en 
-                 FROM informes 
+    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, creado_en
+                 FROM informes
                  WHERE id = ?""", (id,))
     row = c.fetchone()
     if row:
@@ -219,20 +227,20 @@ def get_informe_by_id(id):
 def update_informe(id, nombre_maquina, fecha, hora, descripcion, imagen=None):
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
-    
+
     if imagen is not None:
         # Si se proporciona una nueva imagen, actualizar todos los campos incluyendo la imagen
-        c.execute("""UPDATE informes 
+        c.execute("""UPDATE informes
                      SET nombre_maquina = ?, fecha = ?, hora = ?, descripcion = ?, imagen = ?
-                     WHERE id = ?""", 
+                     WHERE id = ?""",
                   (nombre_maquina, fecha, hora, descripcion, imagen, id))
     else:
         # Si no se proporciona una nueva imagen, actualizar solo los otros campos
-        c.execute("""UPDATE informes 
+        c.execute("""UPDATE informes
                      SET nombre_maquina = ?, fecha = ?, hora = ?, descripcion = ?
-                     WHERE id = ?""", 
+                     WHERE id = ?""",
                   (nombre_maquina, fecha, hora, descripcion, id))
-    
+
     conn.commit()
     conn.close()
 
@@ -241,7 +249,7 @@ def add_informe(nombre_maquina, fecha, hora, descripcion, imagen):
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
     c.execute("""INSERT INTO informes (nombre_maquina, fecha, hora, descripcion, imagen)
-                 VALUES (?, ?, ?, ?, ?)""", 
+                 VALUES (?, ?, ?, ?, ?)""",
               (nombre_maquina, fecha, hora, descripcion, imagen))
     conn.commit()
     informe_id = c.lastrowid
@@ -262,7 +270,7 @@ def ver_maquina(nombre_maquina):
 def nueva_maquina():
     if request.method == 'POST':
         nombre = request.form['nombre']
-        
+
         if nombre:
             if add_maquina(nombre):
                 flash('Máquina agregada correctamente')
@@ -271,7 +279,7 @@ def nueva_maquina():
                 flash('Ya existe una máquina con ese nombre')
         else:
             flash('Por favor ingrese el nombre de la máquina')
-    
+
     return render_template('nueva_maquina.html')
 
 @app.route('/nuevo_informe', methods=['GET', 'POST'])
@@ -281,7 +289,7 @@ def nuevo_informe():
         fecha = request.form['fecha']
         hora = request.form['hora']
         descripcion = request.form['descripcion']
-        
+
         if nombre_maquina and fecha and hora and descripcion:
             # Guardar imagen si se proporciona
             imagen_nombre = None
@@ -292,14 +300,14 @@ def nuevo_informe():
                     extension = imagen.filename.rsplit('.', 1)[1].lower() if imagen.filename else ''
                     imagen_nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{nombre_maquina}.{extension}"
                     imagen.save(os.path.join(app.config['UPLOAD_FOLDER'], imagen_nombre))
-            
+
             # Crear el informe
             add_informe(nombre_maquina, fecha, hora, descripcion, imagen_nombre)
             flash('Informe agregado correctamente')
             return redirect(url_for('ver_maquina', nombre_maquina=nombre_maquina))
         else:
             flash('Por favor complete todos los campos obligatorios')
-    
+
     maquinas = get_maquinas()
     return render_template('nuevo_informe.html', maquinas=maquinas, datetime=datetime)
 
@@ -307,31 +315,31 @@ def nuevo_informe():
 def generar_informe_pdf():
     # Obtener todos los informes
     informes = get_all_informes()
-    
+
     # Crear el PDF con diseño profesional
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
-    
+
     # Configurar fuentes y colores profesionales
     pdf.set_fill_color(25, 118, 210)  # Azul corporativo
     pdf.set_text_color(255, 255, 255)  # Blanco
     pdf.set_draw_color(25, 118, 210)  # Azul corporativo
-    
+
     # Encabezado profesional con logo (simulado)
     pdf.set_font('Arial', 'B', 24)
     pdf.cell(0, 20, 'INFORME TÉCNICO DE MÁQUINAS', 0, 1, 'C', True)
     pdf.ln(2)
-    
+
     # Línea divisoria
     pdf.set_draw_color(255, 255, 255)
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
     pdf.ln(3)
-    
+
     # Subtítulo con fechas en caja destacada
     pdf.set_font('Arial', '', 14)
     pdf.set_text_color(255, 255, 255)
-    
+
     # Obtener el rango de fechas de los informes
     if informes:
         fechas = [i['fecha'] for i in informes]
@@ -340,10 +348,10 @@ def generar_informe_pdf():
         periodo_text = f'PERIODO: {fecha_inicio} AL {fecha_fin}'
     else:
         periodo_text = 'PERIODO: [Sin informes registrados]'
-    
+
     pdf.cell(0, 12, periodo_text, 1, 1, 'C', True)
     pdf.ln(8)
-    
+
     # Información del técnico con diseño de tabla
     pdf.set_text_color(0, 0, 0)
     pdf.set_font('Arial', 'B', 12)
@@ -351,61 +359,61 @@ def generar_informe_pdf():
     pdf.set_font('Arial', '', 12)
     pdf.cell(0, 10, 'Willian Ruiz Z', 1, 1, 'L')
     pdf.ln(5)
-    
+
     # Agrupar informes por máquina
     informes_por_maquina = {}
     for informe in informes:
         if informe['nombre_maquina'] not in informes_por_maquina:
             informes_por_maquina[informe['nombre_maquina']] = []
         informes_por_maquina[informe['nombre_maquina']].append(informe)
-    
+
     # Ordenar las máquinas alfabéticamente
     maquinas_ordenadas = sorted(informes_por_maquina.keys())
-    
+
     # Contenido por máquina con diseño mejorado
     for nombre_maquina in maquinas_ordenadas:
         # Verificar si hay espacio suficiente para la sección
         if pdf.get_y() > 240:
             pdf.add_page()
-        
+
         # Título de la máquina con estilo profesional
         pdf.set_fill_color(33, 150, 243)  # Azul más claro
         pdf.set_text_color(255, 255, 255)
         pdf.set_font('Arial', 'B', 16)
         pdf.cell(0, 12, nombre_maquina, 1, 1, 'L', True)
         pdf.ln(5)
-        
+
         # Resetear colores para contenido
         pdf.set_fill_color(255, 255, 255)
         pdf.set_text_color(0, 0, 0)
         pdf.set_font('Arial', '', 11)
-        
+
         # Informes de la máquina
         informes_maquina = informes_por_maquina[nombre_maquina]
         # Ordenar por fecha y hora
         informes_maquina.sort(key=lambda x: (x['fecha'], x['hora']))
-        
+
         for informe in informes_maquina:
             # Formatear la fecha y hora
             fecha_str = informe['fecha'].strftime('%d/%m/%Y')
             hora_str = informe['hora'].strftime('%H:%M') if informe['hora'].strftime('%H:%M') != '00:00' else ''
-            
+
             # Crear entrada del informe con mejor organización
             pdf.set_font('Arial', 'B', 11)
-            
+
             # Línea de fecha y hora
             linea_fecha = f"Fecha: {fecha_str}"
             if hora_str:
                 linea_fecha += f" | Hora: {hora_str}"
-            
+
             pdf.write(6, linea_fecha)
             pdf.ln(6)
-            
+
             # Descripción
             pdf.set_font('Arial', '', 11)
             pdf.write(6, informe['descripcion'].encode('latin-1', 'replace').decode('latin-1'))
             pdf.ln(8)
-            
+
             # Agregar imagen si existe (centrada y con espacio)
             if informe['imagen']:
                 image_path = os.path.join(app.config['UPLOAD_FOLDER'], informe['imagen'])
@@ -415,32 +423,32 @@ def generar_informe_pdf():
                         if pdf.get_y() + 50 > pdf.h - pdf.b_margin:
                             pdf.add_page()
                             pdf.ln(5)
-                        
+
                         # Centrar la imagen
                         pdf.cell(0, 10, '', 0, 1, 'C')
                         pdf.image(image_path, w=45, h=45)
                         pdf.ln(5)
                     except Exception as e:
                         pass  # Si hay error con la imagen, continuar sin mostrarla
-            
+
             # Línea divisoria sutil entre informes
             pdf.set_draw_color(200, 200, 200)
             pdf.line(15, pdf.get_y(), 195, pdf.get_y())
             pdf.ln(5)
-        
+
         pdf.ln(3)
-    
+
     # Pie de página profesional
     pdf.set_y(-20)
     pdf.set_font('Arial', 'I', 8)
     pdf.set_text_color(128, 128, 128)
     pdf.cell(0, 10, f'Informe generado el {datetime.now().strftime("%d/%m/%Y a las %H:%M")}', 0, 0, 'C')
-    
+
     # Guardar el PDF
     filename = f"informe_maquinas_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     filepath = os.path.join(app.config['REPORT_FOLDER'], filename)
     pdf.output(filepath)
-    
+
     # Enviar el archivo para descarga
     return send_file(filepath, as_attachment=True)
 
@@ -449,40 +457,40 @@ def generar_informe_personalizado():
     titulo = request.form['titulo']
     fecha_inicio = request.form['fecha_inicio']
     fecha_fin = request.form['fecha_fin']
-    
+
     # Obtener informes por rango de fechas
     informes = get_informes_por_fechas(fecha_inicio, fecha_fin)
-    
+
     # Crear el PDF con diseño profesional
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
-    
+
     # Configurar fuentes y colores profesionales
     pdf.set_fill_color(25, 118, 210)  # Azul corporativo
     pdf.set_text_color(255, 255, 255)  # Blanco
     pdf.set_draw_color(25, 118, 210)  # Azul corporativo
-    
+
     # Encabezado profesional
     pdf.set_font('Arial', 'B', 24)
     pdf.cell(0, 20, titulo, 0, 1, 'C', True)
     pdf.ln(2)
-    
+
     # Línea divisoria
     pdf.set_draw_color(255, 255, 255)
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
     pdf.ln(3)
-    
+
     # Subtítulo con fechas en caja destacada
     pdf.set_font('Arial', '', 14)
     pdf.set_text_color(255, 255, 255)
     fecha_inicio_fmt = datetime.strptime(fecha_inicio, '%Y-%m-%d').strftime('%d/%m/%Y')
     fecha_fin_fmt = datetime.strptime(fecha_fin, '%Y-%m-%d').strftime('%d/%m/%Y')
     periodo_text = f'PERIODO: {fecha_inicio_fmt} AL {fecha_fin_fmt}'
-    
+
     pdf.cell(0, 12, periodo_text, 1, 1, 'C', True)
     pdf.ln(8)
-    
+
     # Información del técnico con diseño de tabla
     pdf.set_text_color(0, 0, 0)
     pdf.set_font('Arial', 'B', 12)
@@ -490,61 +498,61 @@ def generar_informe_personalizado():
     pdf.set_font('Arial', '', 12)
     pdf.cell(0, 10, 'Willian Ruiz Z', 1, 1, 'L')
     pdf.ln(5)
-    
+
     # Agrupar informes por máquina
     informes_por_maquina = {}
     for informe in informes:
         if informe['nombre_maquina'] not in informes_por_maquina:
             informes_por_maquina[informe['nombre_maquina']] = []
         informes_por_maquina[informe['nombre_maquina']].append(informe)
-    
+
     # Ordenar las máquinas alfabéticamente
     maquinas_ordenadas = sorted(informes_por_maquina.keys())
-    
+
     # Contenido por máquina con diseño mejorado
     for nombre_maquina in maquinas_ordenadas:
         # Verificar si hay espacio suficiente para la sección
         if pdf.get_y() > 240:
             pdf.add_page()
-        
+
         # Título de la máquina con estilo profesional
         pdf.set_fill_color(33, 150, 243)  # Azul más claro
         pdf.set_text_color(255, 255, 255)
         pdf.set_font('Arial', 'B', 16)
         pdf.cell(0, 12, nombre_maquina, 1, 1, 'L', True)
         pdf.ln(5)
-        
+
         # Resetear colores para contenido
         pdf.set_fill_color(255, 255, 255)
         pdf.set_text_color(0, 0, 0)
         pdf.set_font('Arial', '', 11)
-        
+
         # Informes de la máquina
         informes_maquina = informes_por_maquina[nombre_maquina]
         # Ordenar por fecha y hora
         informes_maquina.sort(key=lambda x: (x['fecha'], x['hora']))
-        
+
         for informe in informes_maquina:
             # Formatear la fecha y hora
             fecha_str = informe['fecha'].strftime('%d/%m/%Y')
             hora_str = informe['hora'].strftime('%H:%M') if informe['hora'].strftime('%H:%M') != '00:00' else ''
-            
+
             # Crear entrada del informe con mejor organización
             pdf.set_font('Arial', 'B', 11)
-            
+
             # Línea de fecha y hora
             linea_fecha = f"Fecha: {fecha_str}"
             if hora_str:
                 linea_fecha += f" | Hora: {hora_str}"
-            
+
             pdf.write(6, linea_fecha)
             pdf.ln(6)
-            
+
             # Descripción
             pdf.set_font('Arial', '', 11)
             pdf.write(6, informe['descripcion'].encode('latin-1', 'replace').decode('latin-1'))
             pdf.ln(8)
-            
+
             # Agregar imagen si existe (centrada y con espacio)
             if informe['imagen']:
                 image_path = os.path.join(app.config['UPLOAD_FOLDER'], informe['imagen'])
@@ -554,32 +562,32 @@ def generar_informe_personalizado():
                         if pdf.get_y() + 50 > pdf.h - pdf.b_margin:
                             pdf.add_page()
                             pdf.ln(5)
-                        
+
                         # Centrar la imagen
                         pdf.cell(0, 10, '', 0, 1, 'C')
                         pdf.image(image_path, w=45, h=45)
                         pdf.ln(5)
                     except Exception as e:
                         pass  # Si hay error con la imagen, continuar sin mostrarla
-            
+
             # Línea divisoria sutil entre informes
             pdf.set_draw_color(200, 200, 200)
             pdf.line(15, pdf.get_y(), 195, pdf.get_y())
             pdf.ln(5)
-        
+
         pdf.ln(3)
-    
+
     # Pie de página profesional
     pdf.set_y(-20)
     pdf.set_font('Arial', 'I', 8)
     pdf.set_text_color(128, 128, 128)
     pdf.cell(0, 10, f'Informe generado el {datetime.now().strftime("%d/%m/%Y a las %H:%M")}', 0, 0, 'C')
-    
+
     # Guardar el PDF
     filename = f"informe_personalizado_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     filepath = os.path.join(app.config['REPORT_FOLDER'], filename)
     pdf.output(filepath)
-    
+
     # Enviar el archivo para descarga
     return send_file(filepath, as_attachment=True)
 
@@ -596,7 +604,7 @@ def editar_informe(id):
     if informe is None:
         flash('Informe no encontrado')
         return redirect(url_for('index'))
-    
+
     maquinas = get_maquinas()
     return render_template('editar_informe.html', informe=informe, maquinas=maquinas, datetime=datetime)
 
@@ -607,16 +615,16 @@ def actualizar_informe(id):
     if informe is None:
         flash('Informe no encontrado')
         return redirect(url_for('index'))
-    
+
     nombre_maquina = request.form['nombre_maquina']
     fecha = request.form['fecha']
     hora = request.form['hora']
     descripcion = request.form['descripcion']
-    
+
     if nombre_maquina and fecha and hora and descripcion:
         # Verificar si se ha subido una nueva imagen
         imagen_nombre = informe['imagen']  # Mantener la imagen existente por defecto
-        
+
         if 'imagen' in request.files:
             imagen = request.files['imagen']
             if imagen.filename != '':
@@ -625,7 +633,7 @@ def actualizar_informe(id):
                     imagen_anterior_path = os.path.join(app.config['UPLOAD_FOLDER'], informe['imagen'])
                     if os.path.exists(imagen_anterior_path):
                         os.remove(imagen_anterior_path)
-                
+
                 # Guardar la nueva imagen
                 extension = imagen.filename.rsplit('.', 1)[1].lower() if imagen.filename else ''
                 imagen_nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{nombre_maquina}.{extension}"
@@ -636,7 +644,7 @@ def actualizar_informe(id):
             else:
                 # Si no hay imagen nueva ni anterior, establecer como None
                 imagen_nombre = None
-        
+
         # Actualizar el informe
         update_informe(id, nombre_maquina, fecha, hora, descripcion, imagen_nombre)
         flash('Informe actualizado correctamente')
@@ -651,12 +659,12 @@ def crear_tablas_iniciales():
     try:
         conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
-        
+
         # Crear tabla de máquinas
         c.execute('''CREATE TABLE IF NOT EXISTS maquinas
                      (id INTEGER PRIMARY KEY AUTOINCREMENT,
                       nombre TEXT UNIQUE NOT NULL)''')
-        
+
         # Crear tabla de informes
         c.execute('''CREATE TABLE IF NOT EXISTS informes
                      (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -667,7 +675,7 @@ def crear_tablas_iniciales():
                       imagen TEXT,
                       creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                       FOREIGN KEY (nombre_maquina) REFERENCES maquinas (nombre))''')
-        
+
         conn.commit()
         conn.close()
         print("Tablas creadas correctamente")
@@ -682,4 +690,6 @@ init_db()
 crear_tablas_iniciales()
 
 if __name__ == '__main__':
+    import webbrowser
+    webbrowser.open('http://127.0.0.1:5000')
     app.run(debug=True)
