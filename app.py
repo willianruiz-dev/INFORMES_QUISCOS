@@ -10,14 +10,20 @@ import io
 
 # Función CORREGIDA para obtener rutas en modo .exe y modo desarrollo
 def resource_path(relative_path):
-    """Obtiene la ruta absoluta a un recurso, funcionando tanto en desarrollo como en PyInstaller"""
-    try:
-        # PyInstaller crea una carpeta temporal _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        # En modo normal (python app.py) usa la carpeta actual
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
+    """Ruta inteligente: UI en _MEIPASS, DB/Uploads junto al exe"""
+    if getattr(sys, 'frozen', False):
+        # Si es .exe:
+        # 1. Templates/Static van a _MEIPASS (donde PyInstaller los extrae)
+        if relative_path.startswith('templates') or relative_path.startswith('static'):
+            try:
+                return os.path.join(sys._MEIPASS, relative_path)
+            except Exception:
+                pass
+        # 2. DB, Uploads, Reports van junto al exe (PERMANENTE)
+        return os.path.join(os.path.dirname(sys.executable), relative_path)
+    else:
+        # En desarrollo normal
+        return os.path.join(os.path.abspath("."), relative_path)
 
 # Configuración de rutas usando la función corregida
 TEMPLATE_DIR = resource_path('templates')
