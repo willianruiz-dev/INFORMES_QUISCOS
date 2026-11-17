@@ -11,13 +11,13 @@ permissions:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: angular-app
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: npm
@@ -25,5 +25,13 @@ jobs:
       - run: npm ci
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
+      - name: Preparar navegador Chromium
+        shell: bash
+        run: |
+          browser="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -n "$browser" ]; then
+            echo "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=$browser" >> "$GITHUB_ENV"
+          else
+            npx playwright install --with-deps chromium
+          fi
       - run: npx playwright test
