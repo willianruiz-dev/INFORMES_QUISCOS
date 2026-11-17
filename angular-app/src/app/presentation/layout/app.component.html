@@ -1,0 +1,81 @@
+<div class="app-shell">
+  @if (mobileMenu()) { <div class="sidebar-overlay" (click)="mobileMenu.set(false)"></div> }
+  <aside class="sidebar" [class.sidebar-open]="mobileMenu()" aria-label="Navegación principal">
+    <a routerLink="/" class="brand" aria-label="Nexo, ir al inicio">
+      <span class="brand-mark"><span>N</span><i></i></span>
+      <span><strong>nexo<span class="brand-dot">.</span></strong><small>GESTIÓN TÉCNICA</small></span>
+    </a>
+
+    <div class="workspace-label"><span>ESPACIO DE TRABAJO</span><svg lucideIcon="ellipsis" [size]="16"></svg></div>
+    <nav class="side-nav">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}"><svg lucideIcon="layout-dashboard" [size]="18"></svg><span>Panel general</span></a>
+      <a routerLink="/maquinas" routerLinkActive="active"><svg lucideIcon="monitor-cog" [size]="18"></svg><span>Máquinas</span><span class="nav-count" aria-hidden="true">{{ store.machines().length }}</span></a>
+      <a routerLink="/informes" routerLinkActive="active"><svg lucideIcon="clipboard-list" [size]="18"></svg><span>Informes</span></a>
+      <div class="nav-caption">GESTIÓN</div>
+      <a routerLink="/datos" routerLinkActive="active"><svg lucideIcon="database-backup" [size]="18"></svg><span>Mis datos</span></a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="storage-card">
+        <div class="storage-card-icon"><svg lucideIcon="shield-check" [size]="18"></svg></div>
+        <div><strong>Tu información es tuya</strong><p>Guardada en este navegador.</p></div>
+        <a routerLink="/datos">Hacer copia de seguridad <svg lucideIcon="arrow-right" [size]="13"></svg></a>
+      </div>
+      <div class="sidebar-user">
+        <span class="user-avatar">ET</span><span><strong>Equipo técnico</strong><small>Área de mantenimiento</small></span>
+        <svg lucideIcon="chevron-down" [size]="15"></svg>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-shell">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-button icon-button" type="button" (click)="mobileMenu.set(true)" aria-label="Abrir menú"><svg lucideIcon="menu" [size]="21"></svg></button>
+        <span class="crumb-muted">Espacio de trabajo</span><svg lucideIcon="chevron-right" [size]="14" class="crumb-chevron"></svg><strong>{{ pageTitle() }}</strong>
+      </div>
+      <div class="topbar-actions">
+        <span class="local-indicator"><span></span> Almacenamiento local</span>
+        <span class="topbar-divider"></span>
+        <button class="button-primary top-new" type="button" (click)="ui.openReport()"><svg lucideIcon="plus" [size]="16"></svg> Nuevo informe</button>
+      </div>
+    </header>
+    <main class="content" id="contenido">
+      @if (store.loading()) {
+        <div class="loading-state"><span class="spinner"></span><p>Preparando tu espacio de trabajo...</p></div>
+      } @else if (store.error() && pageTitle() !== 'Mis datos') {
+        <div class="surface error-screen"><svg lucideIcon="triangle-exclamation-point" [size]="28"></svg><h1>No pudimos abrir tus datos</h1><p>{{ store.error() }}</p><div class="flex gap-2"><button class="button-secondary" (click)="store.initialize()">Intentar de nuevo</button><a routerLink="/datos" class="button-primary">Restaurar una copia</a></div></div>
+      } @else {
+        @if (store.error()) { <div class="error-box mb-4" role="alert">{{ store.error() }} Puedes restaurar una copia desde esta página.</div> }
+        <router-outlet></router-outlet>
+      }
+    </main>
+    <footer class="app-footer"><span>© Nexo · Gestión de mantenimiento</span><span>Hecho para que cada detalle cuente <span class="footer-heart">✦</span></span></footer>
+  </div>
+</div>
+
+@if (ui.machineDialog(); as dialog) {
+  <div class="modal-backdrop" (click)="ui.machineDialog.set(null)">
+    <section class="modal-card" appModalFocus tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="machine-dialog-title" (click)="$event.stopPropagation()">
+      <app-machine-form [machine]="dialog.machine" (closed)="ui.machineDialog.set(null)"></app-machine-form>
+    </section>
+  </div>
+}
+@if (ui.reportDialog(); as dialog) {
+  <div class="modal-backdrop" (click)="ui.reportDialog.set(null)">
+    <section class="modal-card report-modal" appModalFocus tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="report-dialog-title" (click)="$event.stopPropagation()">
+      <app-report-form [report]="dialog.report" [initialMachineId]="dialog.machineId" (closed)="ui.reportDialog.set(null)"></app-report-form>
+    </section>
+  </div>
+}
+@if (ui.exportDialog()) {
+  <div class="modal-backdrop" (click)="ui.exportDialog.set(false)">
+    <section class="modal-card export-modal" appModalFocus tabindex="-1" role="dialog" aria-modal="true" aria-label="Descargar informe PDF" (click)="$event.stopPropagation()">
+      <div class="export-modal-close"><button class="icon-button" (click)="ui.exportDialog.set(false)" aria-label="Cerrar"><svg lucideIcon="x" [size]="19"></svg></button></div>
+      <app-export-panel [inModal]="true"></app-export-panel>
+    </section>
+  </div>
+}
+@if (ui.toast()) {
+  <div class="toast" role="status"><svg lucideIcon="circle-check" [size]="18"></svg>{{ ui.toast() }}</div>
+}

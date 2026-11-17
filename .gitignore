@@ -1,7 +1,7 @@
 # Directorios y archivos generados que no deben subirse al repositorio
 
 # Informes generados en PDF
-reports/
+/reports/
 
 # Imágenes de evidencia subidas por los usuarios
 static/uploads/
@@ -26,3 +26,35 @@ env/
 # Archivos del sistema
 .DS_Store
 Thumbs.db
+# Angular / Node y cachés de herramientas
+node_modules/
+.angular/
+.cache/
+coverage/
+playwright-report/
+test-results/
+.angular-cache/
+*.log
+
+# Salidas generadas (también del proyecto Python anterior)
+build/
+out/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Copias locales y temporales de SQLite
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-shm
+*.db-wal
+*.db
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
+.env
+.env.*
+!.env.example

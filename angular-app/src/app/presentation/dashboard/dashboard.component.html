@@ -1,0 +1,44 @@
+<div class="dashboard">
+  <div class="page-intro"><div><div class="page-kicker"><span></span> RESUMEN GENERAL</div><h1>Tu espacio de trabajo<span>.</span></h1><p>Todo lo que necesitas para mantener tu operación al día.</p></div><div class="today-pill"><svg lucideIcon="calendar-days" [size]="15"></svg><span>{{ today }}</span></div></div>
+
+  <section class="hero" aria-label="Centro de operaciones">
+    <img src="assets/operations-hero.jpg" alt="" class="hero-image">
+    <div class="hero-gradient"></div>
+    <div class="hero-content"><div class="hero-eyebrow"><span></span> TU CENTRO DE MANTENIMIENTO</div><h2>Cada detalle cuenta.<br><span>Nosotros te ayudamos.</span></h2><p>Registra novedades, organiza evidencias y crea informes profesionales en un solo lugar.</p><div class="hero-actions"><button class="hero-primary" (click)="ui.openReport()"><svg lucideIcon="plus" [size]="16"></svg> Registrar novedad</button><a routerLink="/maquinas" class="hero-link">Ver mis máquinas <svg lucideIcon="arrow-right" [size]="15"></svg></a></div></div>
+    <div class="hero-index"><span>GESTIÓN TÉCNICA</span><strong>NEXO<span> / 01</span></strong></div>
+  </section>
+
+  <div class="overview-heading"><div><span class="eyebrow">UN VISTAZO A TU GESTIÓN</span><h2>Resumen de actividad</h2></div><span class="updated-label"><span></span> Información actualizada</span></div>
+  <section class="stats-grid" aria-label="Resumen de actividad">
+    <article class="stat-card surface"><div class="stat-top"><span class="stat-icon blue"><svg lucideIcon="monitor-cog" [size]="19"></svg></span><a routerLink="/maquinas" aria-label="Ver máquinas"><svg lucideIcon="arrow-up-right" [size]="16"></svg></a></div><div class="stat-value">{{ store.machines().length.toString().padStart(2, '0') }}</div><div class="stat-label">Máquinas registradas</div><div class="stat-foot"><span class="stat-dot blue-dot"></span> Tu inventario de equipos</div></article>
+    <article class="stat-card surface"><div class="stat-top"><span class="stat-icon violet"><svg lucideIcon="clipboard-list" [size]="19"></svg></span><a routerLink="/informes" aria-label="Ver informes"><svg lucideIcon="arrow-up-right" [size]="16"></svg></a></div><div class="stat-value">{{ store.reports().length.toString().padStart(2, '0') }}</div><div class="stat-label">Informes creados</div><div class="stat-foot"><span class="stat-dot violet-dot"></span> Historial de novedades</div></article>
+    <article class="stat-card surface"><div class="stat-top"><span class="stat-icon mint"><svg lucideIcon="calendar-days" [size]="19"></svg></span><span class="stat-tag">MES ACTUAL</span></div><div class="stat-value">{{ store.reportsThisMonth().toString().padStart(2, '0') }}</div><div class="stat-label">Novedades del mes</div><div class="stat-foot"><span class="stat-dot mint-dot"></span> Seguimiento de este mes</div></article>
+    <article class="stat-card surface"><div class="stat-top"><span class="stat-icon amber"><svg lucideIcon="images" [size]="19"></svg></span><svg lucideIcon="arrow-up-right" [size]="16" class="stat-arrow"></svg></div><div class="stat-value">{{ store.evidenceCount().toString().padStart(2, '0') }}</div><div class="stat-label">Evidencias guardadas</div><div class="stat-foot"><span class="stat-dot amber-dot"></span> Imágenes en tus informes</div></article>
+  </section>
+
+  <div class="dashboard-columns">
+    <div class="main-column">
+      <section class="surface recent-panel">
+        <div class="section-header"><div><h2 class="section-title">Actividad reciente</h2><p>Las últimas novedades registradas en tus máquinas.</p></div><a routerLink="/informes" class="text-link">Ver todos <svg lucideIcon="arrow-right" [size]="15"></svg></a></div>
+        @if (store.reports().length) {
+          <div class="table-wrap"><table><thead><tr><th>MÁQUINA / NOVEDAD</th><th>FECHA</th><th>EVIDENCIA</th><th><span class="sr-only">Acciones</span></th></tr></thead><tbody>
+            @for (report of store.reports().slice(0, 5); track report.id) {
+              <tr><td><div class="row-machine"><span class="row-icon"><svg lucideIcon="monitor" [size]="16"></svg></span><span class="row-copy"><strong>{{ report.machineName }}</strong><small>{{ report.description }}</small></span></div></td><td><span class="date-main">{{ displayDate(report.date) }}</span><small class="date-time">{{ report.time }}</small></td><td><span class="evidence-pill" [class.has-evidence]="report.evidence.length"><svg lucideIcon="image" [size]="12"></svg> {{ report.evidence.length ? report.evidence.length + ' imagen' + (report.evidence.length === 1 ? '' : 'es') : 'Sin imagen' }}</span></td><td><button class="icon-button" (click)="ui.openReport(report)" [attr.aria-label]="'Editar informe de ' + report.machineName"><svg lucideIcon="pencil" [size]="15"></svg></button></td></tr>
+            }
+          </tbody></table></div>
+        } @else {
+          <div class="empty-state activity-empty"><span class="empty-icon"><svg lucideIcon="clipboard-list" [size]="25"></svg></span><strong>Aquí comienza tu historial</strong><p>Cuando registres una novedad, la encontrarás aquí junto con sus evidencias.</p><button class="button-secondary" (click)="ui.openReport()"><svg lucideIcon="plus" [size]="15"></svg> Crear primer informe</button></div>
+        }
+      </section>
+
+      <section class="surface machines-panel"><div class="section-header"><div><h2 class="section-title">Tus máquinas</h2><p>Un lugar para cada uno de tus equipos.</p></div><a routerLink="/maquinas" class="text-link">Ver máquinas <svg lucideIcon="arrow-right" [size]="15"></svg></a></div>
+        @if (store.machines().length) {
+          <div class="machine-mini-list">@for (machine of store.machines().slice(0, 4); track machine.id) { <a class="machine-mini" routerLink="/informes" [queryParams]="{maquina: machine.id}"><span class="mini-icon"><svg lucideIcon="monitor-cog" [size]="17"></svg></span><span class="mini-copy"><strong>{{ machine.name }}</strong><small>{{ countReports(machine.id) }} {{ countReports(machine.id) === 1 ? 'informe' : 'informes' }}</small></span><svg lucideIcon="chevron-right" [size]="15"></svg></a> }</div>
+        } @else {
+          <div class="machine-empty"><span class="mini-icon"><svg lucideIcon="monitor-cog" [size]="18"></svg></span><div><strong>Agrega tu primera máquina</strong><p>El primer paso para tener todo organizado.</p></div><button class="button-secondary" (click)="ui.openMachine()"><svg lucideIcon="plus" [size]="15"></svg> Agregar máquina</button></div>
+        }
+      </section>
+    </div>
+    <aside class="right-column"><app-export-panel></app-export-panel><div class="tip-card"><div class="tip-top"><span class="tip-icon"><svg lucideIcon="sparkles" [size]="16"></svg></span><span>UN PEQUEÑO CONSEJO</span></div><h3>Captura, pega y listo.</h3><p>¿Tienes un recorte de pantalla? Pégalo directamente con <strong>Ctrl + V</strong> al crear tu informe.</p><button (click)="ui.openReport()">Crear un informe <svg lucideIcon="arrow-right" [size]="14"></svg></button><span class="tip-decoration">✳</span></div></aside>
+  </div>
+</div>

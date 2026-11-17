@@ -1,0 +1,17 @@
+<div class="page-wrap">
+  <div class="page-header"><div><div class="page-kicker"><span></span> INVENTARIO DE EQUIPOS</div><h1>Mis máquinas<span>.</span></h1><p>Todos tus equipos y su historial, organizados en un solo lugar.</p></div><button class="button-primary" (click)="ui.openMachine()"><svg lucideIcon="plus" [size]="16"></svg> Nueva máquina</button></div>
+  @if (error) { <div class="error-box page-error" role="alert">{{ error }}</div> }
+  <div class="summary-strip"><span class="summary-icon"><svg lucideIcon="monitor-cog" [size]="20"></svg></span><div><strong>{{ store.machines().length }} {{ store.machines().length === 1 ? 'máquina registrada' : 'máquinas registradas' }}</strong><p>Cada máquina tiene su propio historial de novedades.</p></div><span class="summary-tag"><span></span> TU INVENTARIO</span></div>
+  <div class="list-toolbar"><div><span class="eyebrow">TU INVENTARIO</span><h2>Listado de máquinas <span>{{ filtered.length }}</span></h2></div><label class="search-box"><svg lucideIcon="search" [size]="16"></svg><input type="search" [(ngModel)]="search" placeholder="Buscar máquina o ubicación..." aria-label="Buscar máquina o ubicación"></label></div>
+  @if (filtered.length) {
+    <div class="machine-grid">
+      @for (machine of filtered; track machine.id) {
+        <article class="machine-card surface"><div class="card-top"><span class="machine-icon"><svg lucideIcon="monitor-cog" [size]="22"></svg></span><span class="machine-code">EQUIPO #{{ machine.id.toString().padStart(3, '0') }}</span><button class="icon-button" (click)="ui.openMachine(machine)" [attr.aria-label]="'Editar máquina ' + machine.name"><svg lucideIcon="pencil" [size]="15"></svg></button><button class="icon-button delete" (click)="remove(machine)" [attr.aria-label]="'Eliminar máquina ' + machine.name"><svg lucideIcon="trash" [size]="15"></svg></button></div><h3>{{ machine.name }}</h3><p class="location"><svg lucideIcon="map-pin" [size]="13"></svg>{{ machine.location || 'Ubicación no especificada' }}</p><div class="machine-info"><div><span>INFORMES</span><strong>{{ count(machine.id).toString().padStart(2, '0') }}</strong></div><div><span>ÚLTIMA NOVEDAD</span><strong>{{ lastDate(machine.id) ? displayDate(lastDate(machine.id)) : 'Sin registros' }}</strong></div></div><div class="card-bottom"><span class="registered"><span></span> Registrada</span><a routerLink="/informes" [queryParams]="{maquina: machine.id}">Ver informes <svg lucideIcon="arrow-right" [size]="14"></svg></a></div></article>
+      }
+    </div>
+  } @else if (store.machines().length) {
+    <div class="surface empty-state"><span class="empty-icon"><svg lucideIcon="search" [size]="23"></svg></span><strong>No encontramos máquinas</strong><p>Prueba con otro nombre o ubicación.</p><button class="button-secondary" (click)="search = ''">Limpiar búsqueda</button></div>
+  } @else {
+    <div class="surface empty-state"><span class="empty-icon"><svg lucideIcon="monitor-cog" [size]="25"></svg></span><strong>Comienza por tu primera máquina</strong><p>Agrega tus equipos para empezar a registrar informes y evidencias.</p><button class="button-primary" (click)="ui.openMachine()"><svg lucideIcon="plus" [size]="15"></svg> Crear máquina</button></div>
+  }
+</div>
