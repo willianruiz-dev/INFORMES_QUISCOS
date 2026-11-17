@@ -1,0 +1,27 @@
+<section class="export-panel" [class.is-modal]="inModal">
+  <div class="panel-heading">
+    <span class="panel-icon"><svg lucideIcon="file-down" [size]="19"></svg></span>
+    <div><h2>Generar informe</h2><p>Todo listo para compartir.</p></div>
+    <span class="pdf-badge">PDF</span>
+  </div>
+  <div class="panel-body">
+    <div class="panel-intro">Convierte tus novedades en un informe profesional en segundos.</div>
+    <form (ngSubmit)="download()">
+      <label class="field-label" [for]="inModal ? 'pdf-title-modal' : 'pdf-title'">Título del informe</label>
+      <input class="field" [id]="inModal ? 'pdf-title-modal' : 'pdf-title'" [attr.data-modal-focus]="inModal ? '' : null" name="title" [(ngModel)]="title" maxlength="100" required>
+      <label class="field-label technician-label" [for]="inModal ? 'pdf-tech-modal' : 'pdf-tech'">Técnico responsable</label>
+      <input class="field" [id]="inModal ? 'pdf-tech-modal' : 'pdf-tech'" name="technician" [(ngModel)]="technician" maxlength="100" placeholder="Nombre del responsable">
+      <div class="period-label"><label class="field-label">Período del informe</label><svg lucideIcon="calendar-range" [size]="15"></svg></div>
+      <div class="presets" aria-label="Períodos rápidos">
+        <button type="button" [class.selected]="preset === 'month'" (click)="setPreset('month')">Este mes</button>
+        <button type="button" [class.selected]="preset === 'fortnight'" (click)="setPreset('fortnight')">Quincena</button>
+        <button type="button" [class.selected]="preset === 'all'" (click)="setPreset('all')">Todo</button>
+      </div>
+      <div class="date-fields"><div><label [for]="inModal ? 'pdf-start-modal' : 'pdf-start'">DESDE</label><input class="field" type="date" [id]="inModal ? 'pdf-start-modal' : 'pdf-start'" name="start" [(ngModel)]="start" (ngModelChange)="preset = 'custom'" required></div><div><label [for]="inModal ? 'pdf-end-modal' : 'pdf-end'">HASTA</label><input class="field" type="date" [id]="inModal ? 'pdf-end-modal' : 'pdf-end'" name="end" [(ngModel)]="end" (ngModelChange)="preset = 'custom'" required></div></div>
+      <div class="selection-info"><svg lucideIcon="file-text" [size]="14"></svg><span>{{ rangeValid ? selectedReports.length : 0 }} {{ selectedReports.length === 1 ? 'novedad incluida' : 'novedades incluidas' }}</span><span class="selection-dot"></span></div>
+      @if (error) { <div class="error-box export-error" role="alert">{{ error }}</div> }
+      <button type="submit" class="button-primary export-button" [disabled]="generating"><svg lucideIcon="download" [size]="16"></svg>{{ generating ? 'Preparando PDF...' : 'Descargar informe PDF' }}</button>
+    </form>
+    <p class="panel-note"><svg lucideIcon="shield-check" [size]="14"></svg> El documento se genera de forma privada en tu navegador.</p>
+  </div>
+</section>

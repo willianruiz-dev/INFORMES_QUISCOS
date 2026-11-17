@@ -1,0 +1,33 @@
+<form class="report-form" (ngSubmit)="save()" #form="ngForm">
+  <div class="modal-header">
+    <div class="dialog-heading"><span class="dialog-icon"><svg lucideIcon="clipboard-list" [size]="19"></svg></span><span><h2 id="report-dialog-title">{{ report ? 'Editar informe' : 'Nuevo informe' }}</h2><p>Registra los detalles de la novedad.</p></span></div>
+    <button type="button" class="icon-button" aria-label="Cerrar" (click)="closed.emit()"><svg lucideIcon="x" [size]="19"></svg></button>
+  </div>
+  <div class="dialog-body">
+    @if (error) { <div class="error-box" role="alert">{{ error }}</div> }
+    @if (store.machines().length === 0) {
+      <div class="no-machines"><svg lucideIcon="info" [size]="18"></svg><span>Para crear un informe, primero registra una máquina. <button type="button" (click)="createMachine()">Crear máquina</button></span></div>
+    }
+    <div><label for="report-machine" class="field-label">Máquina <span class="required">*</span></label><select class="field" id="report-machine" data-modal-focus name="machineId" [(ngModel)]="machineId" required><option [ngValue]="0">Selecciona una máquina</option>@for (machine of store.machines(); track machine.id) { <option [ngValue]="machine.id">{{ machine.name }}</option> }</select></div>
+    <div class="two-fields"><div><label for="report-date" class="field-label">Fecha de la novedad <span class="required">*</span></label><input class="field" id="report-date" name="date" type="date" [(ngModel)]="date" required></div><div><label for="report-time" class="field-label">Hora <span class="required">*</span></label><input class="field" id="report-time" name="time" type="time" [(ngModel)]="time" required></div></div>
+    <div><label for="report-description" class="field-label">Descripción de la novedad <span class="required">*</span></label><textarea class="field description" id="report-description" name="description" [(ngModel)]="description" maxlength="50000" placeholder="Describe qué ocurrió, qué encontraste y las acciones realizadas..." required></textarea><div class="description-help"><span>Sé específico para mantener un buen historial.</span><span>{{ description.length }} / 50.000</span></div></div>
+    <div>
+      <div class="evidence-heading"><div><label class="field-label">Evidencias <span class="optional">OPCIONAL</span></label><p>Una imagen dice más que mil palabras.</p></div><span class="evidence-count">{{ evidence.length }} / {{ maxEvidence }}</span></div>
+      <div class="drop-zone" [class.dragging]="dragging" (dragover)="onDragOver($event)" (dragleave)="dragging = false" (drop)="onDrop($event)" tabindex="0" aria-label="Zona para pegar o soltar imágenes">
+        <span class="upload-icon"><svg lucideIcon="image-plus" [size]="21"></svg></span>
+        <div class="drop-copy"><strong>Arrastra una imagen o <label for="evidence-files">explora tus archivos</label></strong><span>También puedes pegar un recorte con <kbd>Ctrl</kbd> + <kbd>V</kbd></span><small>PNG, JPG, WebP o GIF · Máximo 5 MB por imagen</small></div>
+        <input id="evidence-files" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple (change)="onFileInput($event)" class="sr-only">
+        <button type="button" class="paste-button" (click)="pasteFromClipboard()" [disabled]="reading"><svg lucideIcon="clipboard-paste" [size]="15"></svg> Pegar imagen</button>
+      </div>
+      @if (reading) { <p class="field-help">Procesando imagen...</p> }
+      @if (evidence.length) {
+        <div class="evidence-grid">
+          @for (item of evidence; track $index) {
+            <div class="evidence-preview"><img [src]="item.dataUrl" [alt]="'Evidencia: ' + item.name"><button type="button" (click)="evidence.splice($index, 1)" [attr.aria-label]="'Quitar evidencia ' + item.name"><svg lucideIcon="x" [size]="13"></svg></button><span>{{ item.name }}</span></div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+  <div class="modal-footer"><span class="footer-note"><svg lucideIcon="lock-keyhole" [size]="13"></svg> Guardado en este navegador</span><button type="button" class="button-secondary" (click)="closed.emit()">Cancelar</button><button type="submit" class="button-primary" [disabled]="saving || reading || !store.machines().length">{{ saving ? 'Guardando...' : (report ? 'Guardar cambios' : 'Guardar informe') }} <svg lucideIcon="arrow-right" [size]="15"></svg></button></div>
+</form>

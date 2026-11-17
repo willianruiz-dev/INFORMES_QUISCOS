@@ -1,0 +1,27 @@
+.export-panel { overflow: hidden; border: 1px solid #e7ecf3; border-radius: 12px; background: white; box-shadow: 0 2px 8px rgba(19,37,67,.025); }
+.export-panel.is-modal { border: 0; box-shadow: none; }
+.panel-heading { display: flex; align-items: center; gap: 11px; padding: 19px 19px 17px; border-bottom: 1px solid #edf1f5; }
+.panel-icon { display: grid; width: 39px; height: 39px; flex: none; place-items: center; border-radius: 9px; background: #edf4ff; color: #2a6de1; }
+.panel-heading h2 { color: #1c2c43; font-size: 14px; font-weight: 700; letter-spacing: -.02em; }
+.panel-heading p { margin-top: 3px; color: #98a5b5; font-size: 11px; }
+.pdf-badge { margin-left: auto; padding: 4px 6px; border: 1px solid #dce8fa; border-radius: 4px; color: #4b7fd4; font-size: 9px; font-weight: 700; letter-spacing: .07em; }
+.is-modal .pdf-badge { margin-right: 35px; }
+.panel-body { padding: 18px 19px 19px; }
+.panel-intro { margin-bottom: 19px; color: #7c8b9e; font-size: 11px; line-height: 1.6; }
+.field-label { margin-bottom: 7px; font-size: 11px; }
+.field { height: 39px; min-height: 39px; padding: 8px 10px; font-size: 11px; }
+.technician-label { margin-top: 15px; }
+.period-label { display: flex; justify-content: space-between; margin-top: 19px; color: #9baabd; }
+.presets { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; padding: 3px; border-radius: 8px; background: #f3f6fa; }
+.presets button { height: 30px; border-radius: 6px; color: #8d9aab; font-size: 10px; font-weight: 700; }
+.presets button.selected { background: white; color: #2c6bdc; box-shadow: 0 1px 5px #20365214; }
+.date-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 15px; }
+.date-fields label { display: block; margin-bottom: 6px; color: #a1adbc; font-size: 9px; font-weight: 700; letter-spacing: .08em; }
+.date-fields input { width: 100%; min-width: 0; }
+.selection-info { display: flex; align-items: center; gap: 7px; margin: 16px 0; color: #7f8fa3; font-size: 11px; }
+.selection-info svg { color: #7ca1dc; }
+.selection-dot { width: 6px; height: 6px; margin-left: auto; border-radius: 50%; background: #44c79f; }
+.export-button { width: 100%; min-height: 42px; }
+.export-error { margin: 0 0 12px; }
+.panel-note { display: flex; align-items: flex-start; gap: 6px; margin-top: 14px; color: #a2afbe; font-size: 10px; line-height: 1.5; }
+.panel-note svg { flex: none; color: #8cb9a8; }
